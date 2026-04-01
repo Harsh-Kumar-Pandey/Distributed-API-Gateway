@@ -4,12 +4,30 @@ const morgan = require("morgan");
 const setupProxy = require("./routes/proxy");
 const rateLimiter = require('./middleware/rateLimter')
 const auth = require('./middleware/auth')
+const { publishEvent } = require('./kafka/producer')
 
 const app = express();
 
+app.use((req, res, next) => {
+  const start = Date.now()
+
+  res.on('finish', () => {
+    publishEvent({
+      userId: req.headers['x-user-id'] || req.ip,
+      endpoint: req.path,
+      method: req.method,
+      statusCode: res.statusCode,
+      latencyMs: Date.now() - start,
+      timestamp: new Date().toISOString()
+    })
+  })
+
+  next()
+})
+
 app.use(rateLimiter)  // before the proxy routes
 app.use(auth) // before the proxy routes
-// 1. MUST BE FIRST: The proxy should handle the raw stream
+
 setupProxy(app); 
 
 // 2. Logger and Body Parser only for local Gateway routes (if any)
