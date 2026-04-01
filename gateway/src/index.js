@@ -3,11 +3,12 @@ const express = require("express");
 const morgan = require("morgan");
 const setupProxy = require("./routes/proxy");
 const rateLimiter = require('./middleware/rateLimter')
+const auth = require('./middleware/auth')
 
 const app = express();
 
 app.use(rateLimiter)  // before the proxy routes
-
+app.use(auth) // before the proxy routes
 // 1. MUST BE FIRST: The proxy should handle the raw stream
 setupProxy(app); 
 

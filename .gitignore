@@ -1,0 +1,8 @@
+# Root .gitignore
+node_modules/
+.env
+
+# Specific to your subfolders
+gateway/node_modules/
+services/*/node_modules/
+scripts/*.log
