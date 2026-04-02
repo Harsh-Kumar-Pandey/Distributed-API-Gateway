@@ -6,7 +6,7 @@ const payload = {
   role: 'admin'
 }
 
-const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' })
+const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24d' })
 
 console.log('Your token:')
 console.log(token)
