@@ -1,13 +1,21 @@
 require("dotenv").config();
 const express = require("express");
 const morgan = require("morgan");
-const setupProxy = require("./routes/proxy");
 const rateLimiter = require('./middleware/rateLimter')
 const auth = require('./middleware/auth')
 const { publishEvent } = require('./kafka/producer')
+const { getBreakersStatus } = require('./middleware/circuitBreaker')
+const setupProxy = require("./routes/proxy");
 
 const app = express();
 
+// 1. Body parser first — must be before everything
+app.use(express.json())
+
+// 2. Logger
+app.use(morgan("dev"));
+
+// 3. Kafka event publisher on every request
 app.use((req, res, next) => {
   const start = Date.now()
 
@@ -25,14 +33,22 @@ app.use((req, res, next) => {
   next()
 })
 
-app.use(rateLimiter)  // before the proxy routes
-app.use(auth) // before the proxy routes
+// 4. Rate limiter
+app.use(rateLimiter)
 
-setupProxy(app); 
+// 5. Auth
+app.use(auth)
 
-// 2. Logger and Body Parser only for local Gateway routes (if any)
-app.use(morgan("dev"));
-app.use(express.json()); 
+// 6. Gateway status route (before proxy so it doesn't get intercepted)
+app.get('/gateway/status', (req, res) => {
+  res.json({
+    status: 'ok',
+    circuitBreakers: getBreakersStatus()
+  })
+})
+
+// 7. Proxy routes last
+setupProxy(app)
 
 const PORT = process.env.PORT || 3000;
 
