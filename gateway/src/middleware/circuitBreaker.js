@@ -12,7 +12,7 @@ const breakerOptions = {
 }
 
 const makeRequest = async (target, req, res) => {
-  const url = `${target}${req.originalUrl}`  
+  const url = `${target}${req.url}`  
   
  
   try {
@@ -60,9 +60,9 @@ const getBreaker = (serviceName) => {
 
     // Fallback response when circuit is open
     breaker.fallback(() => ({
-      error: `${serviceName} is currently unavailable`,
+     
       status: 503,
-      retryAfter: '10 seconds'
+      data: { error: `${serviceName} is currently unavailable`, retryAfter: '10 seconds' }
     }))
 
     breakers[serviceName] = breaker

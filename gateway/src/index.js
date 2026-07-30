@@ -2,10 +2,12 @@ require("dotenv").config();
 const express = require("express");
 const morgan = require("morgan");
 const rateLimiter = require('./middleware/rateLimter')
-const auth = require('./middleware/auth')
+const auth = require('./middleware/tokenVerification')
 const { publishEvent } = require('./kafka/producer')
 const { getBreakersStatus } = require('./middleware/circuitBreaker')
 const setupProxy = require("./routes/proxy");
+const authRoutes = require('./auth/authRoutes');
+const tokenVerification = require("./middleware/tokenVerification");
 
 const app = express();
 
@@ -36,9 +38,8 @@ app.use((req, res, next) => {
 // 4. Rate limiter
 app.use(rateLimiter)
 
-// 5. Auth
-app.use(auth)
-
+app.use('/auth', authRoutes)
+app.use(tokenVerification)  // 5. Token verification for all routes after /auth
 // 6. Gateway status route (before proxy so it doesn't get intercepted)
 app.get('/gateway/status', (req, res) => {
   res.json({
